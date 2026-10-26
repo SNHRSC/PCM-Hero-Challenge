@@ -1,0 +1,614 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PCM Hero Challenge</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: a game table. Host screen = the board on the projector; phones = each player's hand. */
+:root{
+  --table:#e9eef5; --felt:#dfe7f1; --paper:#ffffff; --ink:#14233a; --muted:#5a6b82; --line:#c9d4e3;
+  --skill:#1f5c99; --skill-2:#e8f0fa; --scen:#ee9420; --scen-2:#fff3e2; --act:#4b2d80; --act-2:#efe9f8;
+  --hero:#b3262b; --gold:#d79a16; --gold-2:#fff4d6; --ok:#1d8a5a; --warn:#c2410c;
+  --f-display:"Kanit",system-ui,sans-serif; --f-body:"IBM Plex Sans Thai","Noto Sans Thai",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+  --r:14px; --shadow:0 1px 0 rgba(20,35,58,.06),0 6px 18px -8px rgba(20,35,58,.25);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --table:#0d1626; --felt:#132036; --paper:#18263d; --ink:#e7eef9; --muted:#9aaccc; --line:#2a3b58;
+  --skill:#6fa6e6; --skill-2:#16304f; --scen:#f4a640; --scen-2:#3a2a12; --act:#a98be6; --act-2:#2a1f45;
+  --hero:#ef6a6f; --gold:#f1bb3c; --gold-2:#3a2e10; --ok:#4fc58e; --warn:#fb923c; color-scheme:dark;
+  --shadow:0 1px 0 rgba(0,0,0,.3),0 8px 20px -10px rgba(0,0,0,.7);}}
+:root[data-theme="dark"]{
+  --table:#0d1626; --felt:#132036; --paper:#18263d; --ink:#e7eef9; --muted:#9aaccc; --line:#2a3b58;
+  --skill:#6fa6e6; --skill-2:#16304f; --scen:#f4a640; --scen-2:#3a2a12; --act:#a98be6; --act-2:#2a1f45;
+  --hero:#ef6a6f; --gold:#f1bb3c; --gold-2:#3a2e10; --ok:#4fc58e; --warn:#fb923c; color-scheme:dark;
+  --shadow:0 1px 0 rgba(0,0,0,.3),0 8px 20px -10px rgba(0,0,0,.7);}
+*{box-sizing:border-box}
+body{background:var(--table);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+h1,h2,h3,h4{font-family:var(--f-display);font-weight:600;line-height:1.2;margin:0;text-wrap:balance}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.eyebrow{font-family:var(--f-display);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:10px;padding:9px 14px;font-weight:500;min-height:42px}
+.btn:hover{border-color:var(--skill)}
+.btn.primary{background:var(--skill);border-color:var(--skill);color:#fff}
+:root[data-theme="dark"] .btn.primary{color:#0d1626}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.primary{color:#0d1626}}
+.btn.scen{background:var(--scen);border-color:var(--scen);color:#2a1700}
+.btn.act{background:var(--act);border-color:var(--act);color:#fff}
+.btn.ghost{background:transparent}
+.btn.big{font-family:var(--f-display);font-size:18px;padding:12px 22px;min-height:52px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+input,select{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px;width:100%}
+label{display:flex;flex-direction:column;gap:6px;font-weight:500}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px;font-size:12.5px;font-weight:500;border:1px solid var(--line);background:var(--felt);white-space:nowrap}
+.chip.ok{color:var(--ok);border-color:currentColor;background:transparent}
+.chip.warn{color:var(--warn);border-color:currentColor;background:transparent}
+.chip.gold{color:var(--gold);border-color:currentColor;background:transparent}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-mark{width:42px;height:42px;border-radius:10px;background:var(--skill);display:grid;place-items:center;color:#fff;font-family:var(--f-display);font-weight:700;font-size:15px;letter-spacing:.02em;flex:none}
+.brand h1{font-size:20px}
+.code{font-family:var(--f-mono);font-weight:600;letter-spacing:.18em}
+
+/* landing */
+.hero-band{background:var(--paper);border:1px solid var(--line);border-radius:20px;overflow:hidden;display:grid;grid-template-columns:1.2fr 1fr}
+.hero-band .txt{padding:28px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.hero-band h2{font-size:clamp(30px,5vw,52px);font-weight:700;letter-spacing:-.01em}
+.hero-band h2 span{color:var(--skill)}
+.fan{position:relative;min-height:300px;background:var(--felt)}
+.fan img{position:absolute;width:42%;max-width:180px;border-radius:12px;box-shadow:var(--shadow);left:50%;top:50%}
+.facts{display:flex;gap:18px;flex-wrap:wrap}
+.facts div{display:flex;flex-direction:column}
+.facts b{font-family:var(--f-display);font-size:22px;font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:820px){.hero-band{grid-template-columns:1fr}.fan{min-height:240px}.grid2,.grid3{grid-template-columns:1fr}}
+
+/* board track */
+.track-wrap{overflow-x:auto}
+.track{display:grid;grid-template-columns:repeat(7,minmax(96px,1fr));gap:8px;min-width:700px;position:relative}
+.station{background:var(--felt);border:1px solid var(--line);border-radius:12px;padding:10px 8px;min-height:118px;display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center;position:relative}
+.station .n{font-family:var(--f-display);font-size:20px;font-weight:600;color:var(--skill);line-height:1}
+.station .th{font-family:var(--f-display);font-weight:500;font-size:15px}
+.station .en{font-size:11px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.station.end{background:var(--gold-2);border-color:var(--gold)}
+.station.end .n{color:var(--gold)}
+.pawns{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:auto}
+.pawn{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:600;font-family:var(--f-display);border:2px solid var(--paper);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+
+/* cards */
+.cardimg{border-radius:12px;box-shadow:var(--shadow);display:block;width:100%;height:auto;cursor:zoom-in;background:var(--felt);aspect-ratio:409/684}
+.mini{position:relative;border-radius:12px;border:2px solid var(--line);background:var(--paper);padding:10px 10px 12px;display:flex;flex-direction:column;gap:4px;text-align:left;min-width:0;color:var(--ink);width:100%}
+.mini.skill{border-color:var(--skill)}
+.mini.skill .band{background:var(--skill);color:#fff}
+.mini.act{border-color:var(--act)}
+.mini.act .band{background:var(--act);color:#fff}
+.mini .band{margin:-10px -10px 4px;padding:4px 10px;border-radius:9px 9px 0 0;font-size:11px;letter-spacing:.05em;font-family:var(--f-display);font-weight:500;text-transform:uppercase}
+:root[data-theme="dark"] .mini .band{color:#0d1626}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .mini .band{color:#0d1626}}
+.mini .t{font-family:var(--f-display);font-weight:600;font-size:16px;line-height:1.25}
+.mini .e{font-size:12px;color:var(--muted);line-height:1.3}
+.mini .d{font-size:13px;line-height:1.35}
+.mini.sel{outline:4px solid var(--gold);outline-offset:1px}
+.mini.dim{opacity:.5}
+.mini .zoom-btn{position:absolute;top:2px;right:6px;background:none;border:0;color:#fff;font-size:12px;padding:2px 4px;opacity:.9}
+.hand{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.facedown{border-radius:12px;background:repeating-linear-gradient(45deg,var(--skill) 0 10px,color-mix(in srgb,var(--skill) 80%,#000) 10px 20px);aspect-ratio:3/4;display:grid;place-items:center;color:#fff;font-family:var(--f-display);font-weight:600;border:3px solid var(--paper);box-shadow:var(--shadow)}
+.leap{border:2px dashed var(--hero);border-radius:12px;padding:12px;background:var(--paper)}
+.leap .t{font-family:var(--f-display);font-weight:600;color:var(--hero)}
+
+.scenario{background:var(--scen);border-radius:18px;padding:18px;color:#2a1700;display:flex;flex-direction:column;gap:10px}
+.scenario .lbl{font-family:var(--f-display);letter-spacing:.12em;font-size:13px;font-weight:600}
+.scenario .q{background:#fffaf2;border-radius:12px;padding:18px;font-family:var(--f-display);font-size:clamp(20px,2.6vw,30px);font-weight:500;line-height:1.35;color:#2a1700}
+.scenario.lg .q{font-size:clamp(24px,3.2vw,40px);padding:26px}
+
+/* host layout */
+.host-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+@media (max-width:1000px){.host-grid{grid-template-columns:1fr}}
+.side{display:flex;flex-direction:column;gap:16px}
+.bank{display:flex;align-items:center;gap:14px}
+.gem{width:14px;height:14px;transform:rotate(45deg);background:var(--gold);border-radius:3px;display:inline-block;flex:none}
+.gem.off{background:transparent;border:2px solid var(--line)}
+.gems{display:inline-flex;gap:7px;align-items:center;padding-left:3px}
+.bignum{font-family:var(--f-display);font-size:34px;font-weight:600;line-height:1}
+.ptable{display:flex;flex-direction:column;gap:8px}
+.prow{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px;border-radius:10px;background:var(--felt)}
+.prow img{width:40px;height:40px;border-radius:8px;object-fit:cover}
+.prow .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .meta{font-size:12px;color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.reveal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.reveal-item{display:flex;flex-direction:column;gap:8px;min-width:0}
+.reveal-item .who{display:flex;align-items:center;gap:8px;font-weight:600}
+.votebar{height:8px;border-radius:4px;background:var(--felt);overflow:hidden}
+.votebar i{display:block;height:100%;background:var(--gold)}
+.log{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;font-size:13px}
+.log div{border-left:3px solid var(--line);padding-left:8px}
+.phase-steps{display:flex;gap:6px;flex-wrap:wrap}
+.phase-steps span{font-size:12.5px;padding:3px 10px;border-radius:999px;background:var(--felt);color:var(--muted);border:1px solid var(--line)}
+.phase-steps span.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.timer{font-family:var(--f-mono);font-size:30px;font-weight:600}
+.winner-banner{background:var(--gold-2);border:2px solid var(--gold);border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+
+/* player */
+.me{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px;align-items:center}
+.me img{width:72px;height:66px;border-radius:10px;object-fit:cover}
+.sticky-me{position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--table)}
+.targets{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.target{border:2px solid var(--line);border-radius:12px;background:var(--paper);padding:10px;text-align:left;color:var(--ink);display:flex;gap:8px;align-items:center;min-width:0}
+.target.sel{border-color:var(--gold);background:var(--gold-2)}
+.target span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* overlays */
+.overlay{position:fixed;inset:0;background:rgba(8,14,24,.66);z-index:50;display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet{background:var(--paper);color:var(--ink);border-radius:18px;padding:18px;width:min(560px,100%);max-height:88vh;overflow:auto;display:flex;flex-direction:column;gap:12px}
+.zoomimg{max-height:86vh;max-width:min(440px,92vw);width:auto;border-radius:16px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;z-index:60;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+.rules ol,.rules ul{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:4px}
+.rules p{margin:0;max-width:68ch}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:6px 14px;color:var(--ink)}
+.tabs button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+@media (prefers-reduced-motion:no-preference){.pawn{transition:transform .4s}.mini{transition:transform .15s}.mini:hover{transform:translateY(-2px)}}
+</style>
+
+<div id="app" class="wrap"></div>
+<div id="layer"></div>
+
+<script>
+/* ================= DATA (from the printed card set) ================= */
+const CATS={PD:'People Development',OM:'Organizational Management',DM:'Decision Making & Achievement'};
+const SKILLS={
+s01:['PD','เชื่อในศักยภาพและความดีในตัวคน',"Believe in People's Goodness and Potential",'ส่งเสริมด้วยจิตใจที่อบอุ่นและท้าทาย','เมื่อเรามองเห็นศักยภาพในผู้อื่น เขาก็จะมองเห็นมันในตัวเอง'],
+s02:['PD','พัฒนาด้วยมุมมองระยะยาว','Develop with Long-Term Perspective','ค้นหาและดูแลพรสวรรค์อย่างต่อเนื่อง','การปลูกต้นไม้ต้องใช้เวลา การพัฒนาคนก็เช่นกัน'],
+s03:['PD','สร้างความไว้วางใจเพื่อเสริมพลัง','Build Trust to Empower','ฟัง เปิดใจ และสร้างความสัมพันธ์อย่างแท้จริง','ความไว้วางใจ คือรากฐานของการเติบโต'],
+s04:['PD','สนับสนุนแม้มีความล้มเหลว','Encourage Despite Failure','เปิดใจรับความเสี่ยงและพัฒนาจากบทเรียน','ผู้ที่ไม่เคยล้มเหลว คือผู้ที่ไม่เคยท้าทายอะไรเลย'],
+s05:['PD','สร้างสถานการณ์ท้าทาย “Shuraba”','Create Challenging Situation','จัดให้มีงานที่ยากเพื่อกระตุ้นการเติบโต','ยิ่งความท้าทายยิ่งใหญ่ การเติบโตก็ยิ่งลึกซึ้ง'],
+s06:['PD','เคารพความหลากหลาย','Respect Diversity and Develop Individual Strengths','เปิดรับค่านิยมที่แตกต่างเพื่อดึงศักยภาพ','พลังที่แท้จริงของทีมมาจากความหลากหลาย'],
+s07:['OM','ฉายภาพฝันและวิสัยทัศน์','Articulate Vision and Purpose','สื่อสารเป้าหมายด้วยความหลงใหลและข้อมูลจริง','ไม่มีอะไรขับเคลื่อนองค์กรได้เท่าความฝันที่ชัดเจน'],
+s08:['OM','เพิ่มประสิทธิภาพแบบองค์รวม','Optimize as a Whole and in Parts','มองทั้งระบบและรายละเอียดในเวลาเดียวกัน','การพัฒนาแท้จริงเกิดจากการใส่ใจทั้งภาพใหญ่และเล็ก'],
+s09:['OM','บริหารแบบแนวราบและรวดเร็ว','Manage Horizontally and Swiftly','เปิดใจแลกเปลี่ยน พร้อมลงมือเร็ว','องค์กรที่เร็วและฟังได้ไกลกว่าเสมอ'],
+s10:['OM','จัดวางคนให้เหมาะกับงาน','Assign the Right Person to the Right Role','ใช้จุดแข็งแทนตำแหน่งในการมอบหมาย','ใส่คนที่ใช่ไว้ในจุดที่เหมาะที่สุด'],
+s11:['OM','ภาวะผู้นำแนวตั้ง & ร่วมมือแนวนอน','Lead Vertically, Collaborate Horizontally','สร้างผู้นำที่เชื่อมโยงคนข้ามสายงาน','ผู้นำที่แท้คือผู้สร้างสะพาน ไม่ใช่กำแพง'],
+s12:['OM','ถ่ายทอดค่านิยมองค์กร','Pass on Organizational Philosophy','ปลูกฝังวัฒนธรรมที่หล่อหลอมพลังแข่งขัน','วัฒนธรรมที่แข็งแกร่งคือพลังแห่งชัยชนะ'],
+s13:['DM','ตัดสินใจในจังหวะที่เหมาะสม','Decide at the Right Time','ใช้หลัก 60/40 และยืดหยุ่นในการดำเนินการ','การตัดสินใจไม่จำเป็นต้องรอให้แน่ใจ 100%'],
+s14:['DM','เข้าใจสถานการณ์จากความจริง','Go to the Source (San-gen Principle)','ลงพื้นที่จริงเพื่อวิเคราะห์และปรับแผน','อย่าตัดสินใจจากห้องประชุม ให้ลงไปดูด้วยตา'],
+s15:['DM','นำด้วยการลงมือ','Lead by Doing','เริ่มก่อน ทำจริง เป็นตัวอย่าง','คำสั่งไม่เปลี่ยนทีมได้เท่าการเป็นตัวอย่าง'],
+s16:['DM','ปฏิบัติอย่างต่อเนื่อง','Take Consistent Action','ลงมือปรับกลยุทธ์ให้เหมาะกับโลกที่เปลี่ยน','อย่ารอให้แผนสมบูรณ์ จงเริ่มลงมือแล้วปรับไป'],
+s17:['DM','เปิดรับความท้าทาย','Embrace Challenges with Courage','ไม่กลัวเสี่ยง พร้อมก้าวข้ามเพื่อองค์กร','ความกล้าท้าทาย คือพลังแห่งความเปลี่ยนแปลง'],
+s18:['DM','ร่วมมือสร้างนวัตกรรม','Co-create Innovation with Partners','เชื่อมต่อพันธมิตรเพื่อสร้างสิ่งใหม่ร่วมกัน','นวัตกรรมที่ยิ่งใหญ่เกิดจากความร่วมมือ']};
+const SCEN={c01:'มีเวลาจำกัดแต่ภารกิจใหญ่ จะจัดการอย่างไร?',c02:'ทีมของคุณกำลังต่อต้านแนวคิดใหม่ ๆ คุณจะทำอย่างไร?',c03:'ลูกทีมหมดไฟ คุณจะรับมือยังไง?',c04:'คุณต้องเสนอแผนที่กล้าหาญกับผู้บริหาร',c05:'มีความขัดแย้งในทีมที่เริ่มรุนแรง',c06:'สมาชิกใหม่ยังไม่กล้าแสดงความเห็น',c07:'โปรเจกต์เกือบไม่ทันเวลา ต้องเร่งด่วน',c08:'คุณทำพลาดในการนำเสนอครั้งสำคัญ',c09:'คนในทีมไม่เห็นเป้าหมายเดียวกัน',c10:'คุณต้องสื่อสารกับฝ่ายที่ไม่ไว้ใจคุณ',c11:'ทรัพยากรไม่เพียงพอสำหรับทุกทีม',c12:'ทีมรอคำตัดสินใจจากคุณ',c13:'ทีมคุณเสนอไอเดียดีแต่โดนผู้บริหารปัดตก',c14:'คุณได้เป้าหมายใหม่แต่ไม่มีแผน',c15:'คุณต้องโค้ชรุ่นน้องที่ไม่เปิดใจรับฟัง',c16:'เพื่อนร่วมงานบางคนไม่ทำตามตกลง',c17:'คุณต้องเริ่มงานกับทีมใหม่ที่ไม่รู้จัก',c18:'คุณต้องวางแผนระยะยาวในภาวะไม่แน่นอน'};
+// phases: when the card can be played. target: needs another player (can be defended)
+const ACTS={
+a01:{th:'บล็อกการโหวต',tag:'ป้องกัน',d:'ยกเลิกการโหวตของผู้เล่นเป้าหมายในรอบนี้',ph:['reveal','vote'],target:true},
+a02:{th:'ใช้ซ้ำอีกครั้ง',tag:'ยืดหยุ่น',d:'นำ Skill Card ที่ใช้ไปแล้ว (กองทิ้ง) กลับขึ้นมือ 1 ใบ',ph:['action'],pick:'discard'},
+a03:{th:'รีเซ็ตสนาม',tag:'พลิกเกม',d:'ทุกคนทิ้งการ์ดในมือแบบสุ่ม 1 ใบ แล้วจั่วใหม่ 1 ใบ',ph:['action']},
+a04:{th:'วางแผนล่วงหน้า',tag:'เพิ่มโอกาส',d:'แอบดู Scenario Card ใบถัดไป 1 ใบ',ph:['action','scenario']},
+a05:{th:'ทบทวนตัวเอง',tag:'พัฒนา',d:'จั่ว Skill Card เพิ่ม 1 ใบ',ph:['action','scenario']},
+a06:{th:'แรงสนับสนุน',tag:'ทีมเวิร์ก',d:'เพื่อนช่วยโหวตแทน: ได้ +1 โหวตในรอบนี้',ph:['reveal','vote']},
+a07:{th:'หยุด 1 เทิร์น',tag:'รบกวน',d:'ผู้เล่นเป้าหมายงดจั่วการ์ดตอนจบรอบนี้',ph:['action'],target:true},
+a08:{th:'ป้องกัน',tag:'ป้องกัน',d:'ยกเลิก Action Card 1 ใบที่ผู้อื่นใช้ใส่คุณ (ระบบถามอัตโนมัติ)',ph:[]},
+a09:{th:'แอบดู',tag:'วิเคราะห์',d:'ดู Skill Card ในมือของผู้เล่นคนใดก็ได้',ph:['scenario','reveal','vote','action'],target:true},
+a10:{th:'ขโมยไอเดีย',tag:'โจมตี',d:'สุ่มหยิบ Skill Card 1 ใบจากผู้เล่นคนอื่น',ph:['action'],target:true},
+a11:{th:'เปลี่ยนใจ',tag:'ยืดหยุ่น',d:'เปลี่ยน Skill Card ที่เปิดไปแล้วเป็นใบอื่นในมือ (ก่อนโหวต)',ph:['reveal'],pick:'hand'},
+a12:{th:'สลับมือ',tag:'สุ่ม / โจมตี',d:'สลับการ์ดในมือทั้งหมดกับผู้เล่น 1 คน',ph:['action'],target:true}};
+const HEROES={
+h1:{n:'Decision Ace',cat:'Decision Making and Achievement',per:'ตัดสินใจเร็ว วิเคราะห์เก่ง ลงมือทำทันที',pw:'Quick Resolve',pd:'ข้ามสถานการณ์ที่ไม่ถนัด เปิด Scenario ใบใหม่แทน (ช่วงเปิดสถานการณ์)',col:'#b3262b'},
+h2:{n:'Strategic Mind',cat:'Organizational Management',per:'นักวางแผน มองภาพรวมเก่ง บริหารทรัพยากรได้ดี',pw:'Resource Swap',pd:'สลับ Skill Card 1 ใบของคุณกับการ์ดสุ่ม 1 ใบของผู้เล่นอื่น',col:'#1f6f78'},
+h3:{n:'Mentor Spark',cat:'People Development',per:'เป็นพี่เลี้ยง ชอบให้คำแนะนำและสร้างแรงบันดาลใจ',pw:'Inspire Ally',pd:'เลือกผู้เล่น 1 คน (รวมตัวเอง) ให้จั่ว Skill Card ฟรี 1 ใบ',col:'#1f4f8f'},
+h4:{n:'Result Ranger',cat:'Strive for Results',per:'มุ่งมั่น มีเป้าหมายชัดเจน ไม่ยอมแพ้',pw:'Focus Boost',pd:'เมื่อชนะสถานการณ์ในรอบนั้น จั่ว Skill Card เพิ่ม 1 ใบ',col:'#c2410c'},
+h5:{n:'Trust Guardian',cat:'Build Genuine Trustworthy Relationships and Teamwork',per:'ใจดี รับฟังเก่ง เป็นนักประสานงาน',pw:'Empathy Shield',pd:'ป้องกัน Action Card จากผู้เล่นอื่น 1 ครั้ง (ระบบถามอัตโนมัติ)',col:'#2f7d4f'},
+h6:{n:'Captain Growth',cat:'Take Bold Action and Seek Growth',per:'กล้าคิด กล้าทำ ชอบทดลองสิ่งใหม่',pw:'Leap of Faith',pd:'ตอบสถานการณ์โดยไม่ต้องใช้ Skill Card 1 ครั้ง (ช่วงเลือกทักษะ)',col:'#24508f'}};
+const STATIONS=[['เริ่มต้น','Journey','🚀'],['ตื่นตัว','Awareness','1'],['เรียนรู้','Learning','2'],['ปรับตัว','Adapting','3'],['นำทีม','Leading','4'],['สร้างสรรค์','Creating','5'],['ผู้นำแท้','Master','👑']];
+const PCOL=['#e4572e','#2e86de','#1f9d63','#d4a017','#8e44ad','#d63384'];
+const PHASES=[['scenario','เปิดสถานการณ์'],['select','เลือกทักษะ'],['reveal','เปิด & อธิบาย'],['vote','โหวต'],['action','ได้แต้ม & Action'],];
+const WIN=6, BANK=30;
+
+/* ================= helpers ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rid=()=>Math.random().toString(36).slice(2,10);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const store=(s)=>({get(k,d){try{const v=s().getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{s().setItem(k,JSON.stringify(v))}catch(e){}}});
+const LS=store(()=>localStorage), SS=store(()=>sessionStorage);
+let toastT;function toast(m){clearTimeout(toastT);let t=$('#toast');if(!t){t=document.createElement('div');t.id='toast';t.className='toast';t.setAttribute('role','status');document.body.appendChild(t)}t.textContent=m;t.hidden=false;toastT=setTimeout(()=>t.hidden=true,3200)}
+const img=id=>'cards/'+id+'.jpg';
+
+/* ================= ENGINE (runs on the host's screen) ================= */
+const P=(st,id)=>st.players.find(p=>p.id===id);
+const nm=(st,id)=>esc(P(st,id)?.name||'?');
+function log(st,m){st.log.push(m);if(st.log.length>60)st.log.shift()}
+function priv(st,pid,m){(st.priv[pid]||(st.priv[pid]=[])).push({id:rid(),...m});if(st.priv[pid].length>6)st.priv[pid].shift()}
+function drawSkill(st){if(!st.skillDeck.length){if(!st.skillDiscard.length)return null;st.skillDeck=shuffle(st.skillDiscard);st.skillDiscard=[];log(st,'Card Refresh: สับกองทิ้งกลับเป็นกองจั่ว')}return st.skillDeck.pop()}
+function give(st,p,n=1){let g=0;for(let i=0;i<n;i++){const c=drawSkill(st);if(c){p.hand.push(c);g++}}return g}
+function newState(code,hostKey){return{code,hostKey,status:'lobby',lobby:[],kicked:[],maxRounds:18,players:[],log:[],priv:{},seen:{},createdAt:Date.now()}}
+function startGame(st){
+  const heroes=shuffle(Object.keys(HEROES));
+  st.players=st.lobby.slice(0,6).map((l,i)=>({id:l.id,name:l.name,color:i,hero:heroes[i],heroUsed:false,hand:[],actions:[],tokens:0,acted:0,skipDraw:false,blocked:false,bonus:0}));
+  st.skillDeck=shuffle(Object.keys(SKILLS));st.skillDiscard=[];st.actionDeck=shuffle(Object.keys(ACTS));st.actionDiscard=[];
+  st.scenarioDeck=shuffle(Object.keys(SCEN));st.scenarioDone=[];st.bank=BANK;
+  st.players.forEach(p=>give(st,p,3));
+  st.players.forEach(p=>{p.actions.push(st.actionDeck.pop(),st.actionDeck.pop())});
+  st.round=1;st.status='playing';st.selections={};st.votes={};st.played={};st.winners=[];st.pending=null;st.tied=null;st.final=null;
+  st.log=[];log(st,`เริ่มเกม! ผู้เล่น ${st.players.length} คน แจก Hero 1, Skill 3, Action 2 ใบ`);
+  flipScenario(st);
+}
+function flipScenario(st){
+  if(!st.scenarioDeck.length)return finish(st,'การ์ดสถานการณ์หมดกอง');
+  st.scenario=st.scenarioDeck.pop();st.phase='scenario';log(st,`รอบ ${st.round}: เปิดสถานการณ์ “${SCEN[st.scenario]}”`)}
+function toSelect(st){st.phase='select';st.selections={};
+  st.players.forEach(p=>{if(!p.hand.length&&!(p.hero==='h6'&&!p.heroUsed)){st.selections[p.id]='PASS';log(st,`${esc(p.name)} ไม่มีการ์ดในมือ ผ่านรอบนี้`)}});checkAllSelected(st)}
+function checkAllSelected(st){if(st.phase==='select'&&st.players.every(p=>st.selections[p.id]))toReveal(st)}
+function toReveal(st){st.players.forEach(p=>{if(!st.selections[p.id])st.selections[p.id]='PASS'});st.phase='reveal';log(st,'เปิดการ์ดพร้อมกัน! ผลัดกันอธิบายเหตุผล')}
+function toVote(st){st.phase='vote';st.votes={};resolvePendingAuto(st);checkVotes(st)}
+function voteTargets(st,pid){return st.players.filter(q=>q.id!==pid&&st.selections[q.id]&&st.selections[q.id]!=='PASS')}
+function checkVotes(st){if(st.phase!=='vote'||st.pending)return;
+  if(st.players.every(p=>st.votes[p.id]||!voteTargets(st,p.id).length))tally(st)}
+function scores(st){const sc={};st.players.forEach(p=>sc[p.id]=p.bonus||0);
+  Object.entries(st.votes||{}).forEach(([v,t])=>{const vp=P(st,v);if(vp&&!vp.blocked&&sc[t]!=null)sc[t]++});return sc}
+function tally(st){resolvePendingAuto(st);const sc=scores(st);
+  const elig=st.players.filter(p=>st.selections[p.id]&&st.selections[p.id]!=='PASS');
+  const max=Math.max(0,...elig.map(p=>sc[p.id]));const top=elig.filter(p=>sc[p.id]===max).map(p=>p.id);
+  if(max>0&&top.length===1)return award(st,top);
+  st.phase='tiebreak';st.tied=max>0?top:elig.map(p=>p.id);log(st,max>0?'คะแนนเสมอ! ผู้ดำเนินเกมตัดสิน':'ไม่มีคะแนนโหวต ผู้ดำเนินเกมตัดสิน')}
+function award(st,ids){st.tied=null;st.winners=ids.slice();st.played={...st.selections};
+  Object.values(st.selections).forEach(c=>{if(SKILLS[c])st.skillDiscard.push(c)});
+  ids.forEach(id=>{const p=P(st,id);if(st.bank>0){p.tokens++;st.bank--}log(st,`${esc(p.name)} ชนะรอบนี้ +1 แต้มพัฒนา (รวม ${p.tokens})`)});
+  if(!ids.length)log(st,'รอบนี้ไม่มีผู้ได้แต้ม');
+  st.phase='action';if(st.players.some(p=>p.tokens>=WIN))finish(st,`มีผู้สะสมครบ ${WIN} แต้ม`)}
+function endRound(st){resolvePendingAuto(st);
+  st.players.forEach(p=>{if(p.skipDraw){p.skipDraw=false;log(st,`${esc(p.name)} งดจั่ว (หยุด 1 เทิร์น)`)}else if(st.played[p.id]==='LEAP'||st.played[p.id]==='PASS'&&p.hand.length){}else give(st,p,1);p.blocked=false;p.bonus=0});
+  st.scenarioDone.push(st.scenario);st.selections={};st.votes={};st.played={};st.winners=[];st.round++;
+  if(st.round>st.maxRounds)return finish(st,`เล่นครบ ${st.maxRounds} รอบ`);flipScenario(st)}
+function finish(st,why){st.status='ended';st.phase='end';const max=Math.max(...st.players.map(p=>p.tokens));
+  st.final={why,winners:st.players.filter(p=>p.tokens===max).map(p=>p.id)};log(st,`จบเกม (${why}) ผู้ชนะ: ${st.final.winners.map(i=>nm(st,i)).join(', ')}`)}
+function canDefend(p){return p.actions.includes('a08')||(p.hero==='h5'&&!p.heroUsed)}
+function resolvePendingAuto(st){if(st.pending){const pd=st.pending;st.pending=null;log(st,`${nm(st,pd.to)} ไม่ป้องกัน`);resolveAct(st,pd.from,pd.card,pd.params)}}
+function resolveAct(st,from,card,x){const p=P(st,from),T=x.target&&P(st,x.target);
+  switch(card){
+  case'a01':T.blocked=true;log(st,`โหวตของ ${esc(T.name)} ถูกยกเลิกในรอบนี้`);break;
+  case'a02':{const i=st.skillDiscard.indexOf(x.card);if(i>=0){st.skillDiscard.splice(i,1);p.hand.push(x.card);log(st,`${esc(p.name)} นำ “${SKILLS[x.card][1]}” กลับขึ้นมือ`)}break}
+  case'a03':st.players.forEach(q=>{if(q.hand.length){const i=Math.floor(Math.random()*q.hand.length);st.skillDiscard.push(q.hand.splice(i,1)[0])}});st.players.forEach(q=>give(st,q,1));log(st,'ทุกคนทิ้งการ์ด 1 ใบแล้วจั่วใหม่');break;
+  case'a04':{const nx=st.scenarioDeck[st.scenarioDeck.length-1];priv(st,from,{title:'วางแผนล่วงหน้า',text:nx?'สถานการณ์ใบถัดไปคือ':'ไม่มีการ์ดสถานการณ์เหลือในกอง',scen:nx||null});break}
+  case'a05':give(st,p,1);log(st,`${esc(p.name)} จั่ว Skill Card เพิ่ม 1 ใบ`);break;
+  case'a06':p.bonus=(p.bonus||0)+1;log(st,`${esc(p.name)} ได้ +1 โหวตจากแรงสนับสนุน`);if(st.phase==='vote')checkVotes(st);break;
+  case'a07':T.skipDraw=true;log(st,`${esc(T.name)} จะงดจั่วตอนจบรอบ`);break;
+  case'a09':priv(st,from,{title:`การ์ดในมือของ ${T.name}`,text:T.hand.length?'':'ไม่มีการ์ดในมือ',cards:T.hand.slice()});break;
+  case'a10':if(T.hand.length){const i=Math.floor(Math.random()*T.hand.length);const c=T.hand.splice(i,1)[0];p.hand.push(c);priv(st,from,{title:'ขโมยไอเดียสำเร็จ',text:`ได้การ์ดจาก ${T.name}`,cards:[c]});priv(st,T.id,{title:'ถูกขโมยไอเดีย',text:`${p.name} หยิบการ์ดของคุณไป`,cards:[c]})}else log(st,`${esc(T.name)} ไม่มีการ์ดให้ขโมย`);break;
+  case'a11':{const i=p.hand.indexOf(x.card);const cur=st.selections[from];if(i>=0&&SKILLS[cur]){p.hand.splice(i,1,cur);st.selections[from]=x.card;log(st,`${esc(p.name)} เปลี่ยนใจ ใช้ “${SKILLS[x.card][1]}” แทน`)}break}
+  case'a12':{const h=p.hand;p.hand=T.hand;T.hand=h;log(st,`${esc(p.name)} สลับมือกับ ${esc(T.name)}`);priv(st,T.id,{title:'ถูกสลับมือ',text:`${p.name} สลับการ์ดในมือทั้งหมดกับคุณ`,cards:T.hand.slice()});break}
+  }}
+function apply(st,pid,c){const p=P(st,pid);if(!p||st.status!=='playing')return;
+  const fail=m=>priv(st,pid,{kind:'err',title:'ทำรายการไม่ได้',text:m});
+  if(c.type==='select'){
+    if(st.phase!=='select')return fail('ไม่ใช่ช่วงเลือกทักษะ');
+    if(c.card==='LEAP'){if(p.hero!=='h6'||p.heroUsed&&st.selections[pid]!=='LEAP')return fail('ใช้ Leap of Faith ไม่ได้')}
+    else if(!p.hand.includes(c.card))return fail('ไม่มีการ์ดใบนี้ในมือ');
+    const prev=st.selections[pid];if(SKILLS[prev])p.hand.push(prev);if(prev==='LEAP')p.heroUsed=false;
+    if(c.card==='LEAP'){p.heroUsed=true;}else p.hand.splice(p.hand.indexOf(c.card),1);
+    st.selections[pid]=c.card;checkAllSelected(st);return}
+  if(c.type==='vote'){
+    if(st.phase!=='vote')return fail('ยังไม่ถึงช่วงโหวต');
+    if(!voteTargets(st,pid).some(q=>q.id===c.target))return fail('โหวตให้ผู้เล่นคนนี้ไม่ได้');
+    st.votes[pid]=c.target;checkVotes(st);return}
+  if(c.type==='defend'){
+    const pd=st.pending;if(!pd||pd.id!==c.pending||pd.to!==pid)return;st.pending=null;
+    if(c.use==='card'&&p.actions.includes('a08')){p.actions.splice(p.actions.indexOf('a08'),1);st.actionDiscard.push('a08');log(st,`${esc(p.name)} ใช้ “ป้องกัน” ยกเลิก “${ACTS[pd.card].th}”`)}
+    else if(c.use==='hero'&&p.hero==='h5'&&!p.heroUsed){p.heroUsed=true;log(st,`${esc(p.name)} ใช้พลัง Empathy Shield ยกเลิก “${ACTS[pd.card].th}”`)}
+    else{log(st,`${esc(p.name)} ยอมรับผล`);resolveAct(st,pd.from,pd.card,pd.params)}
+    checkVotes(st);return}
+  if(c.type==='action'){
+    const d=ACTS[c.card];if(!d||!p.actions.includes(c.card))return fail('ไม่มี Action Card ใบนี้');
+    if(c.card==='a08')return fail('การ์ดป้องกันจะถูกถามอัตโนมัติเมื่อมีคนใช้ Action ใส่คุณ');
+    if(p.acted===st.round)return fail('ใช้ Action Card ได้ 1 ใบต่อรอบ');
+    if(!d.ph.includes(st.phase))return fail('ใช้การ์ดนี้ในช่วงนี้ไม่ได้');
+    if(st.pending)return fail('รอผลของ Action ก่อนหน้าอยู่');
+    const T=c.target&&P(st,c.target);
+    if(d.target&&(!T||T.id===pid))return fail('เลือกผู้เล่นเป้าหมาย');
+    if(c.card==='a02'&&!st.skillDiscard.includes(c.cardPick))return fail('การ์ดนี้ไม่อยู่ในกองทิ้งแล้ว');
+    if(c.card==='a11'&&(!SKILLS[st.selections[pid]]||!p.hand.includes(c.cardPick)))return fail('ต้องมีการ์ดที่เปิดแล้วและการ์ดในมือเพื่อเปลี่ยน');
+    p.actions.splice(p.actions.indexOf(c.card),1);st.actionDiscard.push(c.card);p.acted=st.round;
+    log(st,`${esc(p.name)} ใช้ Action “${d.th}”${T?' ใส่ '+esc(T.name):''}`);
+    const params={target:c.target||null,card:c.cardPick||null};
+    if(d.target&&canDefend(T)){st.pending={id:rid(),from:pid,to:T.id,card:c.card,params,at:Date.now()};log(st,`รอ ${esc(T.name)} ตัดสินใจป้องกัน…`)}
+    else resolveAct(st,pid,c.card,params);return}
+  if(c.type==='hero'){
+    if(p.heroUsed)return fail('ใช้พลัง Hero ไปแล้ว (1 ครั้งต่อเกม)');const h=p.hero,T=c.target&&P(st,c.target);
+    if(h==='h1'){if(st.phase!=='scenario')return fail('ใช้ได้ในช่วงเปิดสถานการณ์');if(!st.scenarioDeck.length)return fail('ไม่มีการ์ดสถานการณ์เหลือ');
+      p.heroUsed=true;st.scenarioDone.push(st.scenario);st.scenario=st.scenarioDeck.pop();log(st,`${esc(p.name)} ใช้ Quick Resolve เปลี่ยนสถานการณ์เป็น “${SCEN[st.scenario]}”`);return}
+    if(h==='h2'){if(!['scenario','action'].includes(st.phase))return fail('ใช้ได้ในช่วงเปิดสถานการณ์หรือช่วง Action');
+      if(!T||T.id===pid||!T.hand.length)return fail('เลือกผู้เล่นที่มีการ์ดในมือ');if(!p.hand.includes(c.cardPick))return fail('เลือกการ์ดของคุณ');
+      p.heroUsed=true;p.hand.splice(p.hand.indexOf(c.cardPick),1);const i=Math.floor(Math.random()*T.hand.length);const got=T.hand.splice(i,1)[0];T.hand.push(c.cardPick);p.hand.push(got);
+      log(st,`${esc(p.name)} ใช้ Resource Swap กับ ${esc(T.name)}`);priv(st,pid,{title:'Resource Swap',text:`ได้การ์ดจาก ${T.name}`,cards:[got]});priv(st,T.id,{title:'Resource Swap',text:`${p.name} สลับการ์ดกับคุณ คุณได้`,cards:[c.cardPick]});return}
+    if(h==='h3'){if(['select','vote'].includes(st.phase))return fail('ใช้ในช่วงนี้ไม่ได้');if(!T)return fail('เลือกผู้เล่น');
+      p.heroUsed=true;give(st,T,1);log(st,`${esc(p.name)} ใช้ Inspire Ally ให้ ${esc(T.name)} จั่วการ์ดฟรี 1 ใบ`);return}
+    if(h==='h4'){if(st.phase!=='action'||!st.winners.includes(pid))return fail('ใช้ได้หลังจากคุณชนะสถานการณ์ในรอบนั้น');
+      p.heroUsed=true;give(st,p,1);log(st,`${esc(p.name)} ใช้ Focus Boost จั่วการ์ดเพิ่ม 1 ใบ`);return}
+    return fail('พลังนี้ทำงานอัตโนมัติ')}
+}
+
+/* ================= runtime / sync ================= */
+let db=null, dbState='wait';
+const U={view:'home',role:null,code:null,pid:null,name:'',sel:null,sheet:null,zoom:null,timer:null,tab:'skill',seenPriv:SS.get('pcm.seenPriv',{})};
+let S=null;           // host: authoritative state
+let G=null;           // player: latest state from host
+let myDoc=null, sendQ=Promise.resolve(), lastSeq=0;
+let unsubs=[]; let writing=false, dirty=false;
+function cleanup(){unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[]}
+if(window.claude&&window.claude.use){window.claude.use('db').then(d=>{db=d;dbState=d?'ok':'none';boot()}).catch(()=>{dbState='none';boot()})}else{dbState='none'}
+function gameRef(code){return db.doc('games/'+code)}
+function playersCol(code){return db.collection('games/'+code+'/players')}
+
+async function hostSave(){if(!S||!db)return;if(writing){dirty=true;return}writing=true;
+  try{S.v=(S.v||0)+1;S.updatedAt=Date.now();await gameRef(S.code).set(JSON.parse(JSON.stringify(S)))}
+  catch(e){toast('บันทึกสถานะไม่สำเร็จ: '+(e&&e.code||'error')+' — ตรวจสอบสิทธิ์ Contributor')}
+  finally{writing=false;if(dirty){dirty=false;hostSave()}}}
+function commit(){hostSave();render()}
+
+async function createGame(){if(!db)return toast('ต้องเปิดใน claude.ai เพื่อเล่นออนไลน์');
+  const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let code;
+  for(let t=0;t<6;t++){code=Array.from({length:4},()=>A[Math.floor(Math.random()*A.length)]).join('');const s=await gameRef(code).get();if(!s.exists)break}
+  const hostKey=rid()+rid();S=newState(code,hostKey);
+  const hosts=LS.get('pcm.hosts',{});hosts[code]=hostKey;LS.set('pcm.hosts',hosts);
+  await hostSave();startHost(code)}
+async function resumeHost(code){const s=await gameRef(code).get();if(!s.exists)return toast('ไม่พบเกม '+code);
+  const d=JSON.parse(JSON.stringify(s.data()));if(d.hostKey!==LS.get('pcm.hosts',{})[code])return toast('อุปกรณ์นี้ไม่ใช่โฮสต์ของเกมนี้');S=d;startHost(code)}
+function startHost(code){cleanup();U.role='host';U.code=code;U.view='host';SS.set('pcm.session',{role:'host',code});
+  unsubs.push(playersCol(code).onSnapshot(snap=>onPlayers(snap),e=>toast('การเชื่อมต่อผู้เล่นขาด: '+e.code)));render()}
+function onPlayers(snap){if(!S)return;let changed=false;
+  const docs=snap.docs.map(d=>({id:d.id,...d.data()})).filter(d=>d.name);
+  if(S.status==='lobby'){const lob=docs.filter(d=>!S.kicked.includes(d.id)).sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0)).map(d=>({id:d.id,name:String(d.name).slice(0,24)}));
+    if(JSON.stringify(lob)!==JSON.stringify(S.lobby)){S.lobby=lob;changed=true}}
+  docs.forEach(d=>{const seen=S.seen[d.id]||0;(d.cmds||[]).filter(c=>c&&c.seq>seen).sort((a,b)=>a.seq-b.seq).forEach(c=>{apply(S,d.id,c);S.seen[d.id]=c.seq;changed=true})});
+  if(changed)commit()}
+setInterval(()=>{ // host: auto-resolve defense prompts after 30s; refresh timer
+  if(U.role==='host'&&S&&S.pending&&Date.now()-S.pending.at>30000){resolvePendingAuto(S);checkVotes(S);commit()}
+  const t=$('#timer');if(t&&U.timer){const left=Math.max(0,Math.ceil((U.timer.end-Date.now())/1000));t.textContent=Math.floor(left/60)+':'+String(left%60).padStart(2,'0');t.style.color=left<=10?'var(--warn)':''}
+  const pt=$('#pendT');if(pt&&(S||G)?.pending){pt.textContent=Math.max(0,30-Math.floor((Date.now()-(S||G).pending.at)/1000))+' วิ'}
+},500);
+
+async function joinGame(code,name){if(!db)return toast('ต้องเปิดใน claude.ai เพื่อเล่นออนไลน์');
+  code=code.trim().toUpperCase();name=name.trim().slice(0,24);if(!code||!name)return toast('กรอกรหัสห้องและชื่อ');
+  const s=await gameRef(code).get();if(!s.exists)return toast('ไม่พบห้อง '+code);
+  const st=s.data();const prev=LS.get('pcm.joins',{})[code];
+  let pid=(SS.get('pcm.session',{}).code===code&&SS.get('pcm.session',{}).pid)||null;
+  if(!pid&&prev&&st.players&&st.players.some(p=>p.id===prev.pid)&&prev.name===name)pid=prev.pid;
+  if(!pid){if(st.status!=='lobby')return toast('เกมนี้เริ่มไปแล้ว');if((st.lobby||[]).length>=6)return toast('ห้องเต็ม (6 คน)');pid='p'+rid()}
+  const ex=await playersCol(code).doc(pid).get();
+  myDoc=ex.exists?JSON.parse(JSON.stringify(ex.data())):{pid,cmds:[],joinedAt:Date.now()};myDoc.name=name;
+  lastSeq=Math.max(...(myDoc.cmds||[]).map(c=>c.seq),0);
+  await playersCol(code).doc(pid).set(myDoc);
+  const j=LS.get('pcm.joins',{});j[code]={pid,name};LS.set('pcm.joins',j);
+  startPlayer(code,pid,name)}
+function startPlayer(code,pid,name){cleanup();U.role='player';U.code=code;U.pid=pid;U.name=name;U.view='player';SS.set('pcm.session',{role:'player',code,pid,name});
+  unsubs.push(gameRef(code).onSnapshot(s=>{G=s.exists?s.data():null;onG()},e=>toast('การเชื่อมต่อขาด: '+e.code)));render()}
+async function resumePlayer(code,pid,name){const ex=await playersCol(code).doc(pid).get();
+  myDoc=ex.exists?JSON.parse(JSON.stringify(ex.data())):{pid,name,cmds:[],joinedAt:Date.now()};lastSeq=Math.max(...(myDoc.cmds||[]).map(c=>c.seq),0);startPlayer(code,pid,name)}
+function send(cmd){cmd.seq=lastSeq=Math.max(lastSeq+1,Date.now());myDoc.cmds=[...(myDoc.cmds||[]),cmd].slice(-10);
+  sendQ=sendQ.then(()=>playersCol(U.code).doc(U.pid).set(JSON.parse(JSON.stringify(myDoc)))).catch(e=>toast('ส่งไม่สำเร็จ: '+(e&&e.code||'error')));}
+function onG(){ // show newest private message
+  const box=G&&G.priv&&G.priv[U.pid]||[];const unseen=box.filter(m=>!U.seenPriv[m.id]);
+  if(unseen.length&&!U.sheet)U.sheet={type:'priv',msg:unseen[unseen.length-1]};
+  if(G&&G.phase!=='select')U.sel=null;render()}
+
+/* ================= rendering ================= */
+function boot(){const s=SS.get('pcm.session',null);
+  if(db&&s){if(s.role==='host')return resumeHost(s.code).catch(()=>render());if(s.role==='player')return resumePlayer(s.code,s.pid,s.name).catch(()=>render())}render()}
+function render(){
+  const v=U.view;let h='';
+  if(v==='home')h=viewHome();else if(v==='join')h=viewJoin();else if(v==='rules')h=viewRules();else if(v==='cards')h=viewCards();
+  else if(v==='host')h=S?(S.status==='lobby'?viewHostLobby():viewHost()):'<p>กำลังโหลด…</p>';
+  else if(v==='player')h=viewPlayer();
+  $('#app').innerHTML=h;renderLayer()}
+function topbar(extra=''){return`<header class="top"><div class="brand"><div class="brand-mark">PCM</div><div><h1>PCM Hero Challenge</h1><div class="small muted">People Center Management · The Card Challenge</div></div></div><div class="row">${extra}</div></header>`}
+function navBtns(){return`<button class="btn ghost" data-act="go" data-v="rules">กติกา</button><button class="btn ghost" data-act="go" data-v="cards">การ์ดทั้งหมด</button>`}
+function viewHome(){
+  const hosts=Object.keys(LS.get('pcm.hosts',{})).slice(-3),joins=Object.entries(LS.get('pcm.joins',{})).slice(-3);
+  const off=dbState==='none';
+  return`${topbar(navBtns())}
+  <section class="hero-band"><div class="txt">
+    <div class="eyebrow">Board game · พัฒนาผู้นำ สร้างทีมแกร่ง</div>
+    <h2>เส้นทางสู่<span>ผู้นำแท้</span></h2>
+    <p class="muted" style="margin:0;max-width:52ch">เปิดสถานการณ์ในองค์กร เลือก Skill Card ที่เหมาะที่สุด อธิบายเหตุผล แล้วให้เพื่อนโหวต ใครสะสมแต้มพัฒนาครบ 6 แต้มก่อน คือผู้ชนะ</p>
+    <div class="facts"><div><b>2–6</b><span class="small muted">ผู้เล่น</span></div><div><b>45–60</b><span class="small muted">นาที</span></div><div><b>16+</b><span class="small muted">อายุ</span></div><div><b>54</b><span class="small muted">การ์ด</span></div></div>
+    ${off?`<div class="chip warn">โหมดออนไลน์ใช้ได้เมื่อเปิดหน้านี้ใน claude.ai (ลงชื่อเข้าใช้)</div>`:''}
+    <div class="row"><button class="btn primary big" data-act="create" ${off?'disabled':''}>สร้างห้อง (ผู้ดำเนินเกม)</button><button class="btn scen big" data-act="go" data-v="join" ${off?'disabled':''}>เข้าร่วมเกม</button></div>
+    ${hosts.length||joins.length?`<div class="row small">${hosts.map(c=>`<button class="btn" data-act="resumeHost" data-c="${esc(c)}">กลับไปคุมห้อง <span class="code">${esc(c)}</span></button>`).join('')}${joins.map(([c,j])=>`<button class="btn" data-act="resumeJoin" data-c="${esc(c)}">กลับเข้าห้อง <span class="code">${esc(c)}</span> ในชื่อ ${esc(j.name)}</button>`).join('')}</div>`:''}
+  </div>
+  <div class="fan" aria-hidden="true">
+    <img src="${img('h6')}" alt="" style="transform:translate(-115%,-52%) rotate(-12deg)">
+    <img src="${img('c05')}" alt="" style="transform:translate(-50%,-56%) rotate(0deg);z-index:2">
+    <img src="${img('s03')}" alt="" style="transform:translate(15%,-52%) rotate(12deg)">
+  </div></section>
+  <section class="grid3">
+    <div class="panel"><div class="eyebrow">ผู้ดำเนินเกม</div><h3 style="margin:6px 0">เปิดจอใหญ่เป็นกระดาน</h3><p class="small muted" style="margin:0">สร้างห้องบนโน้ตบุ๊กที่ต่อโปรเจกเตอร์ จอนี้จะแสดงเส้นทางผู้นำ Scenario Center Token Bank และคุมจังหวะของแต่ละรอบ</p></div>
+    <div class="panel"><div class="eyebrow">ผู้เล่น</div><h3 style="margin:6px 0">มือถือคือมือการ์ดของคุณ</h3><p class="small muted" style="margin:0">เปิดลิงก์เดียวกันบนมือถือ กด “เข้าร่วมเกม” ใส่รหัสห้อง 4 ตัว แล้วเลือกการ์ด โหวต และใช้ Action ได้จากมือถือ</p></div>
+    <div class="panel"><div class="eyebrow">ในกล่อง</div><h3 style="margin:6px 0">6 Hero · 18 Skill · 18 Scenario · 12 Action</h3><p class="small muted" style="margin:0">ระบบแจกการ์ด นับโหวต และจ่าย Development Token 30 เหรียญให้อัตโนมัติ</p></div>
+  </section>`}
+function viewJoin(){const pre=LS.get('pcm.lastName','');return`${topbar(`<button class="btn ghost" data-act="go" data-v="home">กลับ</button>`)}
+  <section class="panel" style="max-width:460px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:14px">
+    <h2>เข้าร่วมเกม</h2>
+    <form id="joinForm" style="display:flex;flex-direction:column;gap:12px">
+      <label>รหัสห้อง<input id="jCode" class="code" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="เช่น K7QX" required></label>
+      <label>ชื่อที่แสดงในเกม<input id="jName" maxlength="24" value="${esc(pre)}" placeholder="ชื่อเล่นของคุณ" required></label>
+      <button class="btn primary big" type="submit">เข้าห้อง</button>
+    </form><p class="small muted" style="margin:0">ขอรหัสห้องจากผู้ดำเนินเกม ซึ่งแสดงอยู่บนจอใหญ่</p></section>`}
+
+function track(st){const ps=st.players.length?st.players:[];
+  return`<div class="track-wrap"><div class="track">${STATIONS.map((s,i)=>`<div class="station ${i===6?'end':''}"><div class="n">${s[2]}</div><div class="th">${s[0]}</div><div class="en">${s[1]}</div><div class="pawns">${ps.filter(p=>Math.min(p.tokens,6)===i).map(p=>`<span class="pawn" style="background:${PCOL[p.color]}" title="${esc(p.name)}">${esc(p.name.slice(0,2))}</span>`).join('')}</div></div>`).join('')}</div></div>`}
+function gems(n,total=WIN){return`<span class="gems" aria-label="${n} แต้ม">${Array.from({length:total},(_,i)=>`<i class="gem ${i<n?'':'off'}"></i>`).join('')}</span>`}
+function skillMini(id,o={}){const s=SKILLS[id];if(!s)return'';return`<div class="mini skill ${o.sel?'sel':''} ${o.dim?'dim':''}" ${o.act?`role="button" tabindex="0" data-act="${o.act}" data-id="${id}"`:''}><div class="band">${CATS[s[0]]}</div><div class="t">${esc(s[1])}</div><div class="e">${esc(s[2])}</div><div class="d">${esc(s[3])}</div><button class="zoom-btn" data-act="zoom" data-id="${id}" aria-label="ดูการ์ดเต็ม">ขยาย</button></div>`}
+function actMini(id,o={}){const a=ACTS[id];return`<div class="mini act ${o.dim?'dim':''}"><div class="band">Action · ${esc(a.tag)}</div><div class="t">${esc(a.th)}</div><div class="d">${esc(a.d)}</div><button class="zoom-btn" data-act="zoom" data-id="${id}" aria-label="ดูการ์ดเต็ม">ขยาย</button>${o.btn||''}</div>`}
+function scenCard(id,lg){return`<div class="scenario ${lg?'lg':''}"><div class="row" style="justify-content:space-between"><span class="lbl">SCENARIO CARD</span><button class="btn ghost small" style="min-height:30px;padding:2px 10px;border-color:#2a170055;color:#2a1700" data-act="zoom" data-id="${id}">ดูการ์ด</button></div><div class="q">${esc(SCEN[id]||'')}</div></div>`}
+function phaseSteps(st){const cur=st.phase==='tiebreak'?'vote':st.phase;return`<div class="phase-steps">${PHASES.map(([k,l])=>`<span class="${k===cur?'on':''}">${l}</span>`).join('')}</div>`}
+
+function viewHostLobby(){const st=S;const n=st.lobby.length;
+  return`${topbar(`<button class="btn ghost" data-act="leave">ออกจากห้อง</button>`)}
+  <section class="grid2">
+   <div class="panel" style="display:flex;flex-direction:column;gap:14px">
+     <div class="eyebrow">รหัสห้อง</div><div class="code" style="font-size:clamp(56px,10vw,104px);line-height:1;color:var(--skill)">${esc(st.code)}</div>
+     <ol class="small" style="margin:0;padding-left:20px"><li>ผู้เล่นเปิดลิงก์ของหน้านี้บนมือถือ</li><li>กด “เข้าร่วมเกม” แล้วใส่รหัสห้องด้านบน</li><li>เมื่อครบ 2–6 คน กดเริ่มเกม</li></ol>
+     <label style="max-width:240px">จำนวนรอบสูงสุด<select id="maxR">${[6,8,10,12,15,18].map(r=>`<option ${r===st.maxRounds?'selected':''}>${r}</option>`).join('')}</select></label>
+     <button class="btn primary big" data-act="start" ${n<2?'disabled':''}>เริ่มเกม (${Math.min(n,6)} คน)</button>
+     ${n>6?`<div class="chip warn">มีผู้เล่นเกิน 6 คน ระบบจะใช้ 6 คนแรก</div>`:''}
+   </div>
+   <div class="panel" style="display:flex;flex-direction:column;gap:10px"><div class="row" style="justify-content:space-between"><h3>ผู้เล่นในห้อง</h3><span class="chip">${n}/6</span></div>
+     ${n?st.lobby.map((l,i)=>`<div class="prow" style="grid-template-columns:auto minmax(0,1fr) auto"><span class="pawn" style="background:${PCOL[i%6]}">${esc(l.name.slice(0,2))}</span><div class="nm">${esc(l.name)}</div><button class="btn ghost small" data-act="kick" data-id="${esc(l.id)}">นำออก</button></div>`).join(''):`<p class="muted">ยังไม่มีผู้เล่น — รอคนเข้าห้องด้วยรหัส <b class="code">${esc(st.code)}</b></p>`}
+     <p class="small muted" style="margin:0">Hero Card จะสุ่มแจกคนละ 1 ใบเมื่อเริ่มเกม</p></div>
+  </section>`}
+
+function viewHost(){const st=S;const ph=st.phase;
+  const sel=Object.keys(st.selections||{}).length,np=st.players.length;
+  let center='',ctrl='';
+  if(ph==='scenario'){center=`<p class="muted" style="margin:0">อ่านสถานการณ์ให้ทุกคนฟัง แล้วเริ่มให้ผู้เล่นเลือก Skill Card คว่ำหน้าบนมือถือ</p>`;ctrl=`<button class="btn primary big" data-act="h" data-c="select">เริ่มเลือกทักษะ</button>`}
+  if(ph==='select'){center=`<div class="eyebrow">ผู้เล่นกำลังเลือกการ์ดคว่ำหน้า</div><div class="reveal-grid">${st.players.map(p=>`<div class="reveal-item"><div class="who"><i class="dot" style="background:${PCOL[p.color]}"></i>${esc(p.name)}</div>${st.selections[p.id]?`<div class="facedown">${st.selections[p.id]==='PASS'?'ผ่าน':'ส่งแล้ว'}</div>`:`<div class="facedown" style="opacity:.35">กำลังคิด…</div>`}</div>`).join('')}</div>`;ctrl=`<span class="chip">${sel}/${np} ส่งแล้ว</span><button class="btn" data-act="h" data-c="reveal">เปิดการ์ดทันที</button>`}
+  if(ph==='reveal'||ph==='vote'||ph==='tiebreak'){const sc=scores(st);const maxv=Math.max(1,...Object.values(sc));
+    center=`${ph==='reveal'?`<div class="row" style="justify-content:space-between"><div class="eyebrow">ผลัดกันอธิบายว่าทำไมการ์ดนี้เหมาะ</div><div class="row"><span class="timer" id="timer">${U.timer?'':'1:00'}</span><button class="btn" data-act="timer" data-s="60">จับเวลา 60 วิ</button><button class="btn ghost" data-act="timer" data-s="0">หยุด</button></div></div>`:''}
+    <div class="reveal-grid">${st.players.map(p=>{const c=st.selections[p.id];return`<div class="reveal-item"><div class="who"><i class="dot" style="background:${PCOL[p.color]}"></i>${esc(p.name)} ${p.blocked?'<span class="chip warn">โหวตถูกบล็อก</span>':''}${p.bonus?`<span class="chip gold">+${p.bonus} โหวต</span>`:''}</div>${c==='LEAP'?`<div class="leap"><div class="t">Leap of Faith</div><div class="small">ตอบด้วยความกล้า ไม่ใช้ Skill Card</div></div>`:c==='PASS'?`<div class="facedown" style="opacity:.35">ผ่าน</div>`:skillMini(c)}${ph!=='reveal'?`<div class="votebar"><i style="width:${(sc[p.id]||0)/maxv*100}%"></i></div><div class="small muted">${ph==='vote'?(st.votes[p.id]?'โหวตแล้ว':'ยังไม่โหวต')+' · ':''}คะแนน ${sc[p.id]||0}</div>`:''}</div>`}).join('')}</div>`;
+    if(ph==='reveal')ctrl=`<button class="btn primary big" data-act="h" data-c="vote">เริ่มโหวต</button>`;
+    if(ph==='vote')ctrl=`<span class="chip">${Object.keys(st.votes).length}/${np} โหวตแล้ว</span><button class="btn" data-act="h" data-c="tally">นับคะแนนทันที</button>`;
+    if(ph==='tiebreak')ctrl=`<div class="panel" style="display:flex;flex-direction:column;gap:10px;width:100%"><b>ตัดสินผู้ชนะรอบนี้</b><div class="row">${st.tied.map(id=>`<button class="btn primary" data-act="tie" data-id="${id}">${nm(st,id)}</button>`).join('')}<button class="btn" data-act="tie" data-id="ALL">ให้แต้มทุกคนที่เสมอ</button><button class="btn ghost" data-act="tie" data-id="NONE">ไม่มีผู้ได้แต้ม</button></div></div>`}
+  if(ph==='action'){center=`${st.winners.length?`<div class="winner-banner"><span class="gem"></span><div><div class="eyebrow">ผู้ชนะรอบที่ ${st.round}</div><h3>${st.winners.map(i=>nm(st,i)).join(', ')} +1 แต้มพัฒนา</h3></div></div>`:`<div class="winner-banner"><h3>รอบนี้ไม่มีผู้ได้แต้ม</h3></div>`}
+    <div class="reveal-grid">${st.players.map(p=>{const c=st.played[p.id];return`<div class="reveal-item"><div class="who"><i class="dot" style="background:${PCOL[p.color]}"></i>${esc(p.name)}</div>${SKILLS[c]?skillMini(c,{dim:!st.winners.includes(p.id)}):`<div class="small muted">${c==='LEAP'?'Leap of Faith':'ผ่าน'}</div>`}</div>`}).join('')}</div>
+    <p class="muted small" style="margin:0">ช่วง Action: ผู้เล่นใช้ Action Card ได้คนละ 1 ใบจากมือถือ จากนั้นกดจบรอบเพื่อให้ทุกคนจั่วการ์ด 1 ใบ</p>`;
+    ctrl=`<button class="btn primary big" data-act="h" data-c="end">จบรอบ · จั่วการ์ด</button>`}
+  if(ph==='end'){const rk=st.players.slice().sort((a,b)=>b.tokens-a.tokens);center=`<div class="winner-banner" style="flex-direction:column;align-items:flex-start"><div class="eyebrow">จบเกม · ${esc(st.final.why)}</div><h2 style="font-size:clamp(28px,4vw,44px)">ผู้นำแท้: ${st.final.winners.map(i=>nm(st,i)).join(', ')}</h2></div>
+    <div class="ptable">${rk.map((p,i)=>`<div class="prow"><img src="${img(p.hero+'a')}" alt=""><div><div class="nm">${i+1}. ${esc(p.name)}</div><div class="meta">${HEROES[p.hero].n}</div></div><div>${gems(p.tokens)}</div></div>`).join('')}</div>
+    <p class="muted" style="margin:0">“การเรียนรู้ที่สนุก คือการเรียนรู้ที่ยั่งยืน”</p>`;
+    ctrl=`<button class="btn primary big" data-act="again">เล่นอีกครั้ง (ผู้เล่นชุดเดิม)</button>`}
+  const pend=st.pending?`<div class="chip warn">รอ ${nm(st,st.pending.to)} ตัดสินใจป้องกัน “${ACTS[st.pending.card].th}” · <span id="pendT"></span></div><button class="btn small" data-act="h" data-c="resolve">ข้าม (ยอมรับผล)</button>`:'';
+  return`${topbar(`<span class="chip">ห้อง <b class="code">${esc(st.code)}</b></span><span class="chip">รอบ <b class="mono">${Math.min(st.round,st.maxRounds)}/${st.maxRounds}</b></span><button class="btn ghost" data-act="go" data-v="rules">กติกา</button><button class="btn ghost" data-act="confirmEnd">จบเกม</button>`)}
+  <section class="panel" style="display:flex;flex-direction:column;gap:10px"><div class="row" style="justify-content:space-between"><div class="eyebrow">เส้นทางสู่ความเป็นผู้นำ</div>${ph!=='end'?phaseSteps(st):''}</div>${track(st)}</section>
+  <div class="host-grid"><main style="display:flex;flex-direction:column;gap:16px;min-width:0">
+    ${ph!=='end'?`<section style="display:grid;grid-template-columns:minmax(0,1fr);gap:12px"><div class="eyebrow">Scenario Center · รอบที่ ${st.round}</div>${scenCard(st.scenario,true)}</section>`:''}
+    <section class="panel" style="display:flex;flex-direction:column;gap:14px">${center}<div class="row" style="justify-content:flex-end">${pend}${ctrl}</div></section>
+  </main>
+  <aside class="side">
+    <section class="panel bank"><div style="flex:1"><div class="eyebrow">Token Bank</div><div class="bignum mono">${st.bank}</div><div class="small muted">แต้มพัฒนาคงเหลือ จาก ${BANK}</div></div><div style="flex:1"><div class="eyebrow">Card Refresh</div><div class="bignum mono">${st.skillDeck.length}</div><div class="small muted">Skill ในกองจั่ว · ทิ้ง ${st.skillDiscard.length}</div></div></section>
+    <section class="panel" style="display:flex;flex-direction:column;gap:10px"><div class="eyebrow">ผู้เล่น</div><div class="ptable">${st.players.map(p=>`<div class="prow"><img src="${img(p.hero+'a')}" alt=""><div style="min-width:0"><div class="nm"><i class="dot" style="background:${PCOL[p.color]}"></i> ${esc(p.name)}</div><div class="meta">${HEROES[p.hero].n}${p.heroUsed?' · ใช้พลังแล้ว':''} · Skill ${p.hand.length} · Action ${p.actions.length}${p.skipDraw?' · งดจั่ว':''}</div></div><div class="mono" style="font-weight:600">${p.tokens}</div></div>`).join('')}</div></section>
+    <section class="panel"><div class="eyebrow" style="margin-bottom:8px">บันทึกเกม</div><div class="log">${st.log.slice(-14).reverse().map(l=>`<div>${l}</div>`).join('')}</div></section>
+  </aside></div>`}
+
+function viewPlayer(){const st=G;
+  if(!st)return`${topbar()}<div class="panel">กำลังเชื่อมต่อห้อง <b class="code">${esc(U.code)}</b>…</div>`;
+  const me=P(st,U.pid);const lv=`<button class="btn ghost" data-act="leave">ออก</button>`;
+  if(st.status==='lobby'){return`${topbar(lv)}<section class="panel" style="display:flex;flex-direction:column;gap:12px"><div class="eyebrow">ห้อง <span class="code">${esc(st.code)}</span></div><h2>สวัสดี ${esc(U.name)}</h2><p class="muted" style="margin:0">${st.lobby.some(l=>l.id===U.pid)?'คุณอยู่ในห้องแล้ว รอผู้ดำเนินเกมกดเริ่ม':(st.kicked||[]).includes(U.pid)?'คุณถูกนำออกจากห้อง':'กำลังเข้าห้อง…'}</p><div class="row">${st.lobby.map((l,i)=>`<span class="chip"><i class="dot" style="background:${PCOL[i%6]}"></i>${esc(l.name)}</span>`).join('')}</div></section>${rulesShort()}`}
+  if(!me)return`${topbar(lv)}<section class="panel"><h3>เกมเริ่มไปแล้ว</h3><p class="muted">คุณไม่ได้อยู่ในรายชื่อผู้เล่นของเกมนี้ ดูกระดานได้ด้านล่าง</p></section><section class="panel">${track(st)}</section>`;
+  const H=HEROES[me.hero],ph=st.phase;
+  let main='';
+  if(ph==='scenario'){main=`<p class="muted" style="margin:0">ฟังสถานการณ์ให้ดี รอผู้ดำเนินเกมเริ่มรอบเลือกทักษะ</p>`}
+  if(ph==='select'){const mine=st.selections[U.pid];const cur=U.sel||(SKILLS[mine]?mine:null);
+    main=`<div class="eyebrow">เลือก Skill Card 1 ใบ (คว่ำหน้า)</div>
+    ${mine?`<div class="chip ok">ส่งแล้ว: ${mine==='LEAP'?'Leap of Faith':mine==='PASS'?'ผ่าน':esc(SKILLS[mine][1])} — เปลี่ยนได้จนกว่าทุกคนจะส่ง</div>`:''}
+    <div class="hand">${me.hand.map(c=>skillMini(c,{act:'pick',sel:U.sel===c})).join('')}${SKILLS[mine]&&!U.sel?skillMini(mine,{sel:true}):''}</div>
+    <div class="row"><button class="btn primary big" data-act="submitSel" ${U.sel?'':'disabled'}>ส่งการ์ดใบนี้</button>
+    ${me.hero==='h6'&&(!me.heroUsed||mine==='LEAP')?`<button class="btn" data-act="leap" ${mine==='LEAP'?'disabled':''}>ใช้ Leap of Faith (ไม่ใช้การ์ด)</button>`:''}</div>
+    <div class="small muted">${Object.keys(st.selections).length}/${st.players.length} คนส่งแล้ว</div>`}
+  if(ph==='reveal'||ph==='vote'||ph==='tiebreak'){const myv=st.votes&&st.votes[U.pid];
+    main=`<div class="eyebrow">${ph==='reveal'?'การ์ดที่ทุกคนเปิด · อธิบายเหตุผลของคุณ':ph==='vote'?'โหวตคนที่ใช้ทักษะเหมาะสมที่สุด (ห้ามโหวตตัวเอง)':'คะแนนเสมอ รอผู้ดำเนินเกมตัดสิน'}</div>
+    ${ph==='vote'&&me.blocked?`<div class="chip warn">โหวตของคุณถูกบล็อกในรอบนี้ (ยังกดได้แต่ไม่นับ)</div>`:''}
+    <div class="targets">${st.players.map(p=>{const c=st.selections[p.id];const can=ph==='vote'&&p.id!==U.pid&&c&&c!=='PASS';return`<button class="target ${myv===p.id?'sel':''}" ${can?`data-act="vote" data-id="${p.id}"`:'disabled'} style="flex-direction:column;align-items:flex-start;gap:4px"><span style="display:flex;gap:6px;align-items:center;font-weight:600"><i class="dot" style="background:${PCOL[p.color]}"></i>${esc(p.name)}${p.id===U.pid?' (คุณ)':''}</span><span class="small">${c==='LEAP'?'Leap of Faith':c==='PASS'?'ผ่าน':SKILLS[c]?esc(SKILLS[c][1]):''}</span>${myv===p.id?'<span class="chip gold">โหวตแล้ว</span>':''}</button>`}).join('')}</div>
+    ${SKILLS[st.selections[U.pid]]?`<div><div class="eyebrow" style="margin-bottom:6px">การ์ดของคุณ</div><div style="max-width:260px">${skillMini(st.selections[U.pid])}</div></div>`:''}`}
+  if(ph==='action'){main=`<div class="winner-banner"><span class="gem"></span><div><div class="eyebrow">ผู้ชนะรอบนี้</div><b>${st.winners.length?st.winners.map(i=>nm(st,i)).join(', '):'ไม่มี'}</b>${st.winners.includes(U.pid)?' — คุณได้ +1 แต้ม!':''}</div></div><p class="small muted" style="margin:0">ใช้ Action Card ได้ 1 ใบ หรือรอผู้ดำเนินเกมจบรอบ</p>`}
+  if(ph==='end'){const rk=st.players.slice().sort((a,b)=>b.tokens-a.tokens);main=`<div class="winner-banner" style="flex-direction:column;align-items:flex-start"><div class="eyebrow">จบเกม · ${esc(st.final.why)}</div><h2>${st.final.winners.includes(U.pid)?'คุณคือผู้นำแท้!':'ผู้ชนะ: '+st.final.winners.map(i=>nm(st,i)).join(', ')}</h2></div><div class="ptable">${rk.map((p,i)=>`<div class="prow"><img src="${img(p.hero+'a')}" alt=""><div class="nm">${i+1}. ${esc(p.name)}</div><div>${gems(p.tokens)}</div></div>`).join('')}</div>`}
+  const actOk=id=>ACTS[id].ph.includes(ph)&&me.acted!==st.round&&!st.pending&&st.status==='playing';
+  const heroOk=!me.heroUsed&&st.status==='playing'&&((me.hero==='h1'&&ph==='scenario')||(me.hero==='h2'&&['scenario','action'].includes(ph))||(me.hero==='h3'&&!['select','vote'].includes(ph))||(me.hero==='h4'&&ph==='action'&&st.winners.includes(U.pid)));
+  return`${topbar(`<span class="chip">ห้อง <b class="code">${esc(st.code)}</b></span><span class="chip">รอบ <b class="mono">${Math.min(st.round,st.maxRounds)}/${st.maxRounds}</b></span>${lv}`)}
+  <section class="panel sticky-me"><div class="me"><img src="${img(me.hero+'a')}" alt="${H.n}" data-act="zoom" data-id="${me.hero}"><div style="min-width:0"><div class="row" style="justify-content:space-between"><b style="font-family:var(--f-display);font-size:17px">${esc(me.name)} · ${H.n}</b>${gems(me.tokens)}</div>
+   <div class="small"><b>${H.pw}</b> ${me.heroUsed?'<span class="chip">ใช้แล้ว</span>':''} — ${esc(H.pd)}</div>
+   ${heroOk?`<button class="btn act small" style="margin-top:6px;min-height:34px" data-act="heroUse">ใช้พลัง ${H.pw}</button>`:''}</div></div></section>
+  ${ph!=='end'?scenCard(st.scenario):''}
+  ${ph!=='end'?phaseSteps(st):''}
+  <section class="panel" style="display:flex;flex-direction:column;gap:12px">${main}</section>
+  ${ph!=='select'&&ph!=='end'?`<section class="panel" style="display:flex;flex-direction:column;gap:10px"><div class="eyebrow">Skill Card ในมือ (${me.hand.length})</div>${me.hand.length?`<div class="hand">${me.hand.map(c=>skillMini(c)).join('')}</div>`:'<p class="muted small" style="margin:0">ไม่มีการ์ดในมือ</p>'}</section>`:''}
+  ${ph!=='end'?`<section class="panel" style="display:flex;flex-direction:column;gap:10px"><div class="row" style="justify-content:space-between"><div class="eyebrow">Action Card (${me.actions.length})</div>${me.acted===st.round?'<span class="chip">ใช้แล้วรอบนี้</span>':''}</div>${me.actions.length?`<div class="hand">${me.actions.map(a=>actMini(a,{dim:!actOk(a)&&a!=='a08',btn:a==='a08'?'<div class="small muted">ใช้อัตโนมัติเมื่อถูกโจมตี</div>':`<button class="btn act small" style="min-height:34px;margin-top:4px" data-act="useAct" data-id="${a}" ${actOk(a)?'':'disabled'}>ใช้การ์ด</button>`})).join('')}</div>`:'<p class="muted small" style="margin:0">ไม่มี Action Card</p>'}</section>`:''}
+  <section class="panel"><div class="eyebrow" style="margin-bottom:8px">ผู้เล่น</div><div class="ptable">${st.players.map(p=>`<div class="prow"><img src="${img(p.hero+'a')}" alt=""><div style="min-width:0"><div class="nm"><i class="dot" style="background:${PCOL[p.color]}"></i> ${esc(p.name)}</div><div class="meta">${HEROES[p.hero].n} · Skill ${p.hand.length} · Action ${p.actions.length}</div></div><div class="mono" style="font-weight:600">${p.tokens}</div></div>`).join('')}</div></section>
+  <section class="panel"><div class="eyebrow" style="margin-bottom:8px">บันทึกเกม</div><div class="log">${st.log.slice(-8).reverse().map(l=>`<div>${l}</div>`).join('')}</div></section>`}
+
+function rulesShort(){return`<section class="panel rules" style="display:flex;flex-direction:column;gap:8px"><h3>ลำดับการเล่นในแต่ละรอบ</h3><ol><li><b>เปิดสถานการณ์</b> หงาย Scenario Card ใหม่</li><li><b>เลือกทักษะ</b> ทุกคนเลือก Skill Card 1 ใบคว่ำหน้า</li><li><b>เปิดพร้อมกัน</b> อธิบายว่าทำไมการ์ดนี้เหมาะสม</li><li><b>โหวต</b> โหวตคนที่ใช้ทักษะเหมาะสมที่สุด</li><li><b>ได้แต้ม</b> ผู้ชนะได้ 1 แต้มพัฒนา</li><li><b>ใช้ Action</b> ใช้ Action Card ได้ 1 ใบ</li><li><b>จั่วการ์ด</b> ทุกคนจั่วกลับ 1 ใบ</li></ol></section>`}
+function viewRules(){const back=U.role?`<button class="btn ghost" data-act="go" data-v="${U.role}">กลับเข้าเกม</button>`:`<button class="btn ghost" data-act="go" data-v="home">กลับ</button>`;
+  return`${topbar(back)}<section class="grid2 rules">
+  <div class="panel" style="display:flex;flex-direction:column;gap:10px"><h3>เป้าหมาย</h3><p>เป็นคนแรกที่สะสมแต้มพัฒนา <b>6 แต้ม</b> (ถึงช่อง “ผู้นำแท้”) หรือมีแต้มมากสุดเมื่อเล่นครบ 18 รอบ</p>
+   <h3>การเตรียมเกม (ระบบทำให้)</h3><ul><li>แจก Hero Card คนละ 1 ใบ (สุ่ม)</li><li>แจก Skill Card คนละ 3 ใบ</li><li>แจก Action Card คนละ 2 ใบ</li><li>สับ Scenario Cards คว่ำเป็นกอง</li><li>วาง Development Token 30 เหรียญไว้ที่ Token Bank</li></ul></div>
+  ${rulesShort().replace('<section class="panel rules"','<div class="panel"').replace('</section>','</div>')}
+  <div class="panel" style="display:flex;flex-direction:column;gap:10px"><h3>Hero Card</h3><p>ใช้พลังพิเศษได้ 1 ครั้งต่อเกม</p><ul>${Object.values(HEROES).map(h=>`<li><b>${h.n} · ${h.pw}</b> — ${esc(h.pd)}</li>`).join('')}</ul></div>
+  <div class="panel" style="display:flex;flex-direction:column;gap:10px"><h3>Action Card</h3><p>ใช้ได้ 1 ใบต่อรอบ บางใบใช้ได้ก่อนโหวต (บล็อกการโหวต แรงสนับสนุน เปลี่ยนใจ) ที่เหลือใช้ในช่วง Action หลังได้แต้ม การ์ดที่เล็งผู้เล่นอื่นถูกป้องกันได้</p><ul>${Object.values(ACTS).map(a=>`<li><b>${a.th}</b> — ${esc(a.d)}</li>`).join('')}</ul></div>
+  <div class="panel" style="display:flex;flex-direction:column;gap:10px"><h3>เงื่อนไขการชนะ</h3><ul><li>วิธีที่ 1: สะสมแต้มพัฒนา 6 แต้มก่อนใคร</li><li>วิธีที่ 2: เล่นครบ 18 รอบ (หรือการ์ดสถานการณ์หมด) ใครแต้มมากสุดชนะ</li><li>โหวตเสมอ: ผู้ดำเนินเกมเลือกผู้ชนะ หรือให้แต้มทุกคนที่เสมอ</li></ul></div>
+  <div class="panel" style="display:flex;flex-direction:column;gap:10px"><h3>เทคนิคการเล่น</h3><ul><li><b>อ่านสถานการณ์</b> ฟังให้ดีและคิดให้รอบคอบก่อนเลือกการ์ด</li><li><b>สื่อสารให้ชัด</b> อธิบายเหตุผลให้น่าสนใจและเข้าใจง่าย</li><li><b>จังหวะ Action</b> เก็บ Action Card ไว้ใช้ในจังหวะสำคัญ</li><li><b>Hero Power</b> ใช้ความสามารถพิเศษในช่วงท้ายเกม</li><li><b>ปรับกลยุทธ์</b> สังเกตการ์ดที่คนอื่นเล่นและปรับแผน</li></ul></div>
+  </section>`}
+function viewCards(){const t=U.tab;const back=U.role?`<button class="btn ghost" data-act="go" data-v="${U.role}">กลับเข้าเกม</button>`:`<button class="btn ghost" data-act="go" data-v="home">กลับ</button>`;
+  const ids=t==='skill'?Object.keys(SKILLS):t==='scen'?Object.keys(SCEN):t==='act'?Object.keys(ACTS):Object.keys(HEROES);
+  return`${topbar(back)}<section class="panel" style="display:flex;flex-direction:column;gap:14px"><div class="tabs">${[['hero','Hero 6'],['skill','Skill 18'],['scen','Scenario 18'],['act','Action 12']].map(([k,l])=>`<button class="${k===t?'on':''}" data-act="tab" data-t="${k}">${l}</button>`).join('')}</div>
+  <div class="gallery">${ids.map(id=>`<img class="cardimg" loading="lazy" src="${img(id)}" alt="${esc(SKILLS[id]?.[1]||SCEN[id]||ACTS[id]?.th||HEROES[id]?.n)}" data-act="zoom" data-id="${id}">`).join('')}</div></section>`}
+
+function renderLayer(){const L=$('#layer');let h='';
+  if(U.zoom)h=`<div class="overlay" data-act="closeZoom"><img class="zoomimg" src="${img(U.zoom)}" alt="การ์ด"></div>`;
+  else if(G&&U.role==='player'&&G.pending&&G.pending.to===U.pid){const me=P(G,U.pid),pd=G.pending;
+    h=`<div class="overlay"><div class="sheet" role="dialog" aria-modal="true"><div class="eyebrow">ถูกใช้ Action ใส่คุณ · <span id="pendT"></span></div><h3>${nm(G,pd.from)} ใช้ “${ACTS[pd.card].th}” ใส่คุณ</h3><p class="muted" style="margin:0">${esc(ACTS[pd.card].d)}</p><div class="row">${me.actions.includes('a08')?`<button class="btn act" data-act="defend" data-u="card">ใช้การ์ดป้องกัน</button>`:''}${me.hero==='h5'&&!me.heroUsed?`<button class="btn primary" data-act="defend" data-u="hero">ใช้ Empathy Shield</button>`:''}<button class="btn" data-act="defend" data-u="none">ยอมรับผล</button></div></div></div>`}
+  else if(U.sheet&&U.sheet.type==='priv'){const m=U.sheet.msg;h=`<div class="overlay"><div class="sheet" role="dialog" aria-modal="true"><div class="eyebrow">${m.kind==='err'?'แจ้งเตือน':'ข้อมูลลับเฉพาะคุณ'}</div><h3>${esc(m.title)}</h3>${m.text?`<p style="margin:0">${esc(m.text)}</p>`:''}${m.scen?scenCard(m.scen):''}${m.cards&&m.cards.length?`<div class="hand">${m.cards.map(c=>skillMini(c)).join('')}</div>`:''}<button class="btn primary" data-act="closePriv">รับทราบ</button></div></div>`}
+  else if(U.sheet&&U.sheet.type==='use'){h=sheetUse()}
+  else if(U.sheet&&U.sheet.type==='confirmEnd'){h=`<div class="overlay"><div class="sheet"><h3>จบเกมตอนนี้?</h3><p class="muted" style="margin:0">ผู้ที่มีแต้มมากที่สุดจะเป็นผู้ชนะ</p><div class="row"><button class="btn primary" data-act="h" data-c="finish">จบเกม</button><button class="btn" data-act="closeSheet">ยกเลิก</button></div></div></div>`}
+  L.innerHTML=h}
+function sheetUse(){const st=G,me=P(st,U.pid),s=U.sheet;const isHero=s.kind==='hero';
+  const needT=isHero?['h2','h3'].includes(me.hero):ACTS[s.id].target;
+  const pick=isHero?(me.hero==='h2'?'hand':null):ACTS[s.id].pick;
+  const title=isHero?HEROES[me.hero].pw:ACTS[s.id].th, desc=isHero?HEROES[me.hero].pd:ACTS[s.id].d;
+  const others=st.players.filter(p=>isHero&&me.hero==='h3'?true:p.id!==U.pid);
+  const pool=pick==='discard'?st.skillDiscard:pick==='hand'?me.hand:[];
+  const ready=(!needT||s.target)&&(!pick||s.card);
+  return`<div class="overlay"><div class="sheet" role="dialog" aria-modal="true"><div class="eyebrow">${isHero?'พลัง Hero':'Action Card'}</div><h3>${esc(title)}</h3><p class="muted" style="margin:0">${esc(desc)}</p>
+  ${needT?`<div class="eyebrow">เลือกผู้เล่น</div><div class="targets">${others.map(p=>`<button class="target ${s.target===p.id?'sel':''}" data-act="sT" data-id="${p.id}"><i class="dot" style="background:${PCOL[p.color]}"></i><span>${esc(p.name)}${p.id===U.pid?' (คุณ)':''}</span></button>`).join('')}</div>`:''}
+  ${pick?`<div class="eyebrow">${pick==='discard'?'เลือกการ์ดจากกองทิ้ง':'เลือกการ์ดในมือของคุณ'}</div>${pool.length?`<div class="hand">${pool.map(c=>skillMini(c,{act:'sC',sel:s.card===c})).join('')}</div>`:'<p class="muted small">ไม่มีการ์ดให้เลือก</p>'}`:''}
+  <div class="row"><button class="btn act" data-act="confirmUse" ${ready?'':'disabled'}>ยืนยันใช้</button><button class="btn" data-act="closeSheet">ยกเลิก</button></div></div></div>`}
+
+/* ================= events ================= */
+const H={
+ go:d=>{U.view=d.v;render();scrollTo(0,0)},
+ tab:d=>{U.tab=d.t;render()},
+ create:()=>createGame().catch(e=>toast('สร้างห้องไม่สำเร็จ: '+(e&&e.code||'error'))),
+ resumeHost:d=>resumeHost(d.c).catch(()=>toast('โหลดห้องไม่สำเร็จ')),
+ resumeJoin:d=>{const j=LS.get('pcm.joins',{})[d.c];if(j)resumePlayer(d.c,j.pid,j.name).catch(()=>toast('โหลดห้องไม่สำเร็จ'))},
+ leave:()=>{cleanup();SS.set('pcm.session',null);S=null;G=null;U.role=null;U.view='home';render()},
+ zoom:(d,el,e)=>{e.stopPropagation();U.zoom=d.id;renderLayer()},
+ closeZoom:()=>{U.zoom=null;renderLayer()},
+ closeSheet:()=>{U.sheet=null;renderLayer()},
+ closePriv:()=>{U.seenPriv[U.sheet.msg.id]=1;SS.set('pcm.seenPriv',U.seenPriv);U.sheet=null;onG()},
+ confirmEnd:()=>{U.sheet={type:'confirmEnd'};renderLayer()},
+ kick:d=>{S.kicked.push(d.id);S.lobby=S.lobby.filter(l=>l.id!==d.id);commit()},
+ start:()=>{const r=+($('#maxR')?.value||18);S.maxRounds=r;startGame(S);commit()},
+ again:()=>{S.lobby=S.players.map(p=>({id:p.id,name:p.name}));S.priv={};startGame(S);commit()},
+ timer:d=>{U.timer=+d.s?{end:Date.now()+d.s*1000}:null;render()},
+ h:d=>{const c=d.c;U.sheet=null;
+   if(c==='select')toSelect(S);else if(c==='reveal')toReveal(S);else if(c==='vote'){U.timer=null;toVote(S)}else if(c==='tally')tally(S);
+   else if(c==='end')endRound(S);else if(c==='resolve'){resolvePendingAuto(S);checkVotes(S)}else if(c==='finish')finish(S,'ผู้ดำเนินเกมจบเกม');commit()},
+ tie:d=>{const ids=d.id==='ALL'?S.tied:d.id==='NONE'?[]:[d.id];award(S,ids);commit()},
+ pick:d=>{U.sel=U.sel===d.id?null:d.id;render()},
+ submitSel:()=>{if(U.sel){send({type:'select',card:U.sel});toast('ส่งการ์ดคว่ำแล้ว');U.sel=null;render()}},
+ leap:()=>{send({type:'select',card:'LEAP'});toast('ใช้ Leap of Faith')},
+ vote:d=>{send({type:'vote',target:d.id});toast('โหวตแล้ว')},
+ defend:d=>{send({type:'defend',pending:G.pending.id,use:d.u});toast('ส่งคำตอบแล้ว')},
+ useAct:d=>{const a=ACTS[d.id];if(!a.target&&!a.pick){send({type:'action',card:d.id});toast('ใช้ “'+a.th+'” แล้ว');return}U.sheet={type:'use',kind:'act',id:d.id};renderLayer()},
+ heroUse:()=>{const me=P(G,U.pid);if(['h1','h4'].includes(me.hero)){send({type:'hero'});toast('ใช้พลัง '+HEROES[me.hero].pw);return}U.sheet={type:'use',kind:'hero'};renderLayer()},
+ sT:d=>{U.sheet.target=d.id;renderLayer()},
+ sC:d=>{U.sheet.card=d.id;renderLayer()},
+ confirmUse:()=>{const s=U.sheet;if(s.kind==='hero')send({type:'hero',target:s.target,cardPick:s.card});else send({type:'action',card:s.id,target:s.target,cardPick:s.card});U.sheet=null;renderLayer();toast('ส่งคำสั่งแล้ว')},
+};
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el||el.disabled)return;const f=H[el.dataset.act];if(f)f(el.dataset,el,e)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(U.zoom||U.sheet&&U.sheet.type!=='priv')){U.zoom=null;if(U.sheet&&U.sheet.type!=='priv')U.sheet=null;renderLayer()}
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches('[role=button][data-act]')){e.preventDefault();e.target.click()}});
+document.addEventListener('submit',e=>{if(e.target.id==='joinForm'){e.preventDefault();const n=$('#jName').value;LS.set('pcm.lastName',n);joinGame($('#jCode').value,n).catch(err=>toast('เข้าห้องไม่สำเร็จ: '+(err&&err.code||'error')))}});
+render();
+</script>
+
+</body></html>
